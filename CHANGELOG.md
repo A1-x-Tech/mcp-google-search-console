@@ -1,0 +1,62 @@
+# Changelog
+
+All notable changes to this project are documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and the project adheres to [Semantic Versioning](https://semver.org/).
+
+## [Unreleased]
+
+## [0.1.0] — 2026-08-09
+
+### Added
+- First real release: a full MCP server for the Google Search Console API
+  (stdio, TypeScript, `@modelcontextprotocol/sdk` + `zod`), covering both API
+  surfaces on `searchconsole.googleapis.com` — `webmasters/v3` (sites,
+  sitemaps, searchanalytics) and `v1` (urlInspection).
+- Tools (11):
+  - `list_sites`, `get_site` — properties and permission levels (the source of
+    truth for the exact siteUrl format: URL-prefix vs `sc-domain:`);
+  - `add_site`, `delete_site` — add/unlink a property (verification stays with
+    the Search Console UI / Site Verification API);
+  - `search_analytics` — the full performance query: dimensions (date, query,
+    page, country, device, searchAppearance, hour), search types (web, image,
+    video, news, discover, googleNews), AND-combined filters incl. RE2 regex
+    operators, aggregation types, `rowLimit`/`startRow` pagination and
+    `dataState` (final/all/hourly_all);
+  - `list_sitemaps`, `get_sitemap`, `submit_sitemap`, `delete_sitemap` —
+    sitemap management (submit is the API's body-less PUT with an empty
+    success response, surfaced as `{ ok: true }`);
+  - `inspect_url` — Google-index status with verdicts, coverage, crawl info,
+    canonicals and rich results (the tool description warns about the
+    2,000/day per-property quota);
+  - `raw_request` — escape hatch to any path on either surface (SSRF-guarded).
+- Property identifiers (`siteUrl`) and sitemap URLs (`feedpath`) are fully
+  URL-encoded as path segments by the client — `sc-domain:example.com` and
+  `https://example.com/` both route correctly.
+- OAuth2 refresh flow: access tokens are minted from
+  `GOOGLE_SEARCH_CONSOLE_CLIENT_ID`/`_CLIENT_SECRET`/`_REFRESH_TOKEN`, cached
+  until just before expiry, deduped across concurrent requests and re-minted
+  once on a 401; a static `GOOGLE_SEARCH_CONSOLE_ACCESS_TOKEN` works as an
+  alternative.
+- Resilience: request timeout covering body reads, `Retry-After`-aware backoff,
+  429 retried for every method, 5xx/network retries gated to reads so mutations
+  are never replayed; Google's error envelope is surfaced with the
+  machine-readable `reason` (e.g. `quotaExceeded`).
+- Anonymous usage telemetry (event/tool names and versions only; opt out with
+  `ASKADS_TELEMETRY=0`), including the `startup_failed` drop-off ping.
+- Offline test suite (72 tests): mocked-fetch client tests incl. the OAuth flow
+  and path encoding, fake-server tool tests, pinned per-tool annotations, plus
+  a dist smoke test that spawns the built binary and performs a real MCP
+  handshake over stdio.
+- CI (Node 20/22: typecheck + build + tests) and a daily live health check that
+  skips itself when repo secrets are absent.
+
+## [0.0.1] — 2026-08-09
+
+### Added
+- npm name reservation stub.
+
+[Unreleased]: https://github.com/A1-x-Tech/mcp-google-search-console/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/A1-x-Tech/mcp-google-search-console/releases/tag/v0.1.0
+[0.0.1]: https://github.com/A1-x-Tech/mcp-google-search-console/commits/main
