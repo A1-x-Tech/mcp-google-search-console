@@ -24,7 +24,7 @@ you, from a quick indexing check to a full performance analysis.
      -e GOOGLE_SEARCH_CONSOLE_CLIENT_ID=your_client_id \
      -e GOOGLE_SEARCH_CONSOLE_CLIENT_SECRET=your_client_secret \
      -e GOOGLE_SEARCH_CONSOLE_REFRESH_TOKEN=your_refresh_token \
-     -- npx -y mcp-google-search-console
+     -- npx -y mcp-google-search-console@latest
    ```
 
 3. Ask the assistant: *"Show me the top 20 search queries for example.com over
@@ -95,7 +95,7 @@ claude mcp add google-search-console \
   -e GOOGLE_SEARCH_CONSOLE_CLIENT_ID=your_client_id \
   -e GOOGLE_SEARCH_CONSOLE_CLIENT_SECRET=your_client_secret \
   -e GOOGLE_SEARCH_CONSOLE_REFRESH_TOKEN=your_refresh_token \
-  -- npx -y mcp-google-search-console
+  -- npx -y mcp-google-search-console@latest
 ```
 
 </details>
@@ -110,7 +110,7 @@ claude mcp add google-search-console \
   "mcpServers": {
     "google-search-console": {
       "command": "npx",
-      "args": ["-y", "mcp-google-search-console"],
+      "args": ["-y", "mcp-google-search-console@latest"],
       "env": {
         "GOOGLE_SEARCH_CONSOLE_CLIENT_ID": "your_client_id",
         "GOOGLE_SEARCH_CONSOLE_CLIENT_SECRET": "your_client_secret",
@@ -133,7 +133,7 @@ claude mcp add google-search-console \
   "mcpServers": {
     "google-search-console": {
       "command": "npx",
-      "args": ["-y", "mcp-google-search-console"],
+      "args": ["-y", "mcp-google-search-console@latest"],
       "env": {
         "GOOGLE_SEARCH_CONSOLE_CLIENT_ID": "your_client_id",
         "GOOGLE_SEARCH_CONSOLE_CLIENT_SECRET": "your_client_secret",
@@ -157,7 +157,7 @@ claude mcp add google-search-console \
     "google-search-console": {
       "type": "stdio",
       "command": "npx",
-      "args": ["-y", "mcp-google-search-console"],
+      "args": ["-y", "mcp-google-search-console@latest"],
       "env": {
         "GOOGLE_SEARCH_CONSOLE_CLIENT_ID": "your_client_id",
         "GOOGLE_SEARCH_CONSOLE_CLIENT_SECRET": "your_client_secret",
