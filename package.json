@@ -1,0 +1,23 @@
+{
+  "name": "mcp-google-search-console",
+  "version": "0.0.1",
+  "description": "MCP server for the Google Search Console API — search analytics, sitemaps, URL inspection and site management. For Claude, Cursor, Codex and other AI clients.",
+  "keywords": ["mcp", "model-context-protocol", "google", "search-console", "gsc", "seo", "search-analytics", "claude", "cursor", "codex"],
+  "homepage": "https://github.com/A1-x-Tech/mcp-google-search-console#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/A1-x-Tech/mcp-google-search-console.git"
+  },
+  "license": "MIT",
+  "author": "gistrec <gistrec@gmail.com>",
+  "type": "module",
+  "bin": {
+    "mcp-google-search-console": "index.js"
+  },
+  "files": [
+    "index.js"
+  ],
+  "engines": {
+    "node": ">=18"
+  }
+}
