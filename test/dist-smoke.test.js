@@ -18,6 +18,7 @@ const ALL_TOOLS = [
   "delete_sitemap",
   "get_site",
   "get_sitemap",
+  "get_top_queries",
   "inspect_url",
   "list_sitemaps",
   "list_sites",

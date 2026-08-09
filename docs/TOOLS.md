@@ -35,6 +35,7 @@ domain property (`sc-domain:example.com`). `list_sites` is the source of truth.
 | Tool | Description |
 |---|---|
 | `search_analytics` | `POST .../searchAnalytics/query`. Inputs: `start_date`/`end_date` (YYYY-MM-DD, **Pacific Time**, end inclusive), `dimensions` (`date`, `query`, `page`, `country`, `device`, `searchAppearance`, `hour`), `search_type` (`web` default, `image`, `video`, `news`, `discover`, `googleNews`), `filters` (AND-only; operators `equals`, `notEquals`, `contains`, `notContains`, `includingRegex`, `excludingRegex` — RE2), `aggregation_type` (`auto`/`byPage`/`byProperty`/`byNewsShowcasePanel`), `row_limit` (≤25000), `start_row`, `data_state` (`final`/`all`/`hourly_all`). Rows: `keys[]` (mirrors the dimensions order) + `clicks`, `impressions`, `ctr` (fraction 0..1), `position`; sorted by clicks desc. |
+| `get_top_queries` | Convenience wrapper over the same endpoint: groups by `query`, sorted by clicks desc. Inputs: `site_url`, `start_date`/`end_date`, `limit` (default 100), optional `page_filter` (page URL contains), `country` (alpha-3), `device` (`DESKTOP`/`MOBILE`/`TABLET`). For anything fancier use `search_analytics`. |
 
 Search-analytics notes:
 

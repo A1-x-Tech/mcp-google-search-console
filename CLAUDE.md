@@ -39,7 +39,8 @@ npm run smoke      # live READ-ONLY check (lists the account's properties)
   `{ ok: true, ... }` — never parse it as JSON.
 - `src/tools/sites.ts` — `list_sites`, `get_site`, `add_site`, `delete_site`.
   `src/tools/sitemaps.ts` — `list_sitemaps`, `get_sitemap`, `submit_sitemap`,
-  `delete_sitemap`. `src/tools/analytics.ts` — `search_analytics`.
+  `delete_sitemap`. `src/tools/analytics.ts` — `search_analytics` and its sugar
+  `get_top_queries` (dimensions=["query"] + optional page/country/device filters).
   `src/tools/inspection.ts` — `inspect_url`. `src/tools/raw.ts` — `raw_request`
   (GET/POST/PUT/DELETE). `src/tools/util.ts` — `ok`/`fail`, the four annotation presets
   (`READ_ONLY`/`WRITE`/`DESTRUCTIVE`/`RAW`) and shared zod schema factories

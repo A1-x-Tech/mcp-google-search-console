@@ -39,6 +39,7 @@ you, from a quick indexing check to a full performance analysis.
 | `add_site` | Add a property (stays unverified until verified in Search Console). |
 | `delete_site` | Unlink a property from the account (no data is deleted). |
 | `search_analytics` | Performance query: clicks/impressions/CTR/position by date, query, page, country, device, search appearance or hour; filters, search type, pagination, fresh-data mode. |
+| `get_top_queries` | Shortcut for the most common ask: top queries by clicks, optionally filtered by page substring, country or device. |
 | `list_sitemaps` | Submitted sitemaps (or children of a sitemap index), with errors/warnings. |
 | `get_sitemap` | One sitemap's status and per-content-type counts. |
 | `submit_sitemap` | Submit or resubmit a sitemap. |

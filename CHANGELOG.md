@@ -14,7 +14,7 @@ and the project adheres to [Semantic Versioning](https://semver.org/).
   (stdio, TypeScript, `@modelcontextprotocol/sdk` + `zod`), covering both API
   surfaces on `searchconsole.googleapis.com` — `webmasters/v3` (sites,
   sitemaps, searchanalytics) and `v1` (urlInspection).
-- Tools (11):
+- Tools (12):
   - `list_sites`, `get_site` — properties and permission levels (the source of
     truth for the exact siteUrl format: URL-prefix vs `sc-domain:`);
   - `add_site`, `delete_site` — add/unlink a property (verification stays with
@@ -24,6 +24,8 @@ and the project adheres to [Semantic Versioning](https://semver.org/).
     video, news, discover, googleNews), AND-combined filters incl. RE2 regex
     operators, aggregation types, `rowLimit`/`startRow` pagination and
     `dataState` (final/all/hourly_all);
+  - `get_top_queries` — sugar over the same endpoint for the most common ask:
+    top queries by clicks, with optional page/country/device filters;
   - `list_sitemaps`, `get_sitemap`, `submit_sitemap`, `delete_sitemap` —
     sitemap management (submit is the API's body-less PUT with an empty
     success response, surfaced as `{ ok: true }`);
@@ -45,12 +47,12 @@ and the project adheres to [Semantic Versioning](https://semver.org/).
   machine-readable `reason` (e.g. `quotaExceeded`).
 - Anonymous usage telemetry (event/tool names and versions only; opt out with
   `ASKADS_TELEMETRY=0`), including the `startup_failed` drop-off ping.
-- Offline test suite (72 tests): mocked-fetch client tests incl. the OAuth flow
+- Offline test suite (75 tests): mocked-fetch client tests incl. the OAuth flow
   and path encoding, fake-server tool tests, pinned per-tool annotations, plus
   a dist smoke test that spawns the built binary and performs a real MCP
   handshake over stdio.
-- CI (Node 20/22: typecheck + build + tests) and a daily live health check that
-  skips itself when repo secrets are absent.
+- CI (Node 20/22/24: typecheck + build + tests) and a daily live health check
+  that skips itself when repo secrets are absent.
 
 ## [0.0.1] — 2026-08-09
 

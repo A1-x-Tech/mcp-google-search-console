@@ -1,6 +1,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { GoogleSearchConsoleClient } from "../client.js";
+import type { DimensionFilter } from "../types.js";
 import { fail, ok, READ_ONLY, siteUrlSchema, ymdDate } from "./util.js";
 
 export function registerAnalyticsTools(server: McpServer, client: GoogleSearchConsoleClient): void {
@@ -95,6 +96,60 @@ export function registerAnalyticsTools(server: McpServer, client: GoogleSearchCo
             rowLimit: row_limit,
             startRow: start_row,
             dataState: data_state,
+          }),
+        );
+      } catch (e) {
+        return fail(e);
+      }
+    },
+  );
+
+  server.registerTool(
+    "get_top_queries",
+    {
+      title: "Top search queries",
+      annotations: READ_ONLY,
+      description:
+        "Convenience wrapper over search_analytics for the most common ask: the top search queries for a property, sorted by clicks descending (the API's default order). Each row has keys[0] = the query string plus clicks, impressions, ctr (a FRACTION 0..1) and position. Dates are calendar dates in Pacific Time, end_date inclusive; final data lags ~2-3 days. Anonymized long-tail queries are never returned. Same endpoint and quota as search_analytics — use search_analytics directly for other dimensions, pagination, fresh data or regex filters.",
+      inputSchema: {
+        site_url: siteUrlSchema(),
+        start_date: ymdDate().describe("First date of the range, YYYY-MM-DD, Pacific Time."),
+        end_date: ymdDate().describe("Last date of the range, YYYY-MM-DD, Pacific Time, inclusive."),
+        limit: z
+          .number()
+          .int()
+          .min(1)
+          .max(25000)
+          .optional()
+          .describe("How many top queries to return (1..25000; default 100)."),
+        page_filter: z
+          .string()
+          .optional()
+          .describe('Only count traffic to pages whose URL CONTAINS this substring, e.g. "/blog/".'),
+        country: z
+          .string()
+          .optional()
+          .describe('Only count traffic from this country — ISO 3166-1 alpha-3 code, e.g. "usa".'),
+        device: z
+          .enum(["DESKTOP", "MOBILE", "TABLET"])
+          .optional()
+          .describe("Only count traffic from this device class."),
+      },
+    },
+    async ({ site_url, start_date, end_date, limit, page_filter, country, device }) => {
+      try {
+        const filters: DimensionFilter[] = [];
+        if (page_filter) filters.push({ dimension: "page", operator: "contains", expression: page_filter });
+        if (country) filters.push({ dimension: "country", operator: "equals", expression: country });
+        if (device) filters.push({ dimension: "device", operator: "equals", expression: device });
+        return ok(
+          await client.searchAnalytics({
+            siteUrl: site_url,
+            startDate: start_date,
+            endDate: end_date,
+            dimensions: ["query"],
+            filters: filters.length > 0 ? filters : undefined,
+            rowLimit: limit ?? 100,
           }),
         );
       } catch (e) {

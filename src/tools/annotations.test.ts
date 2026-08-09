@@ -48,11 +48,12 @@ const EXPECTED: Record<string, Annotations> = {
   submit_sitemap: WRITE,
   delete_sitemap: DESTRUCTIVE,
   search_analytics: READ_ONLY,
+  get_top_queries: READ_ONLY,
   inspect_url: READ_ONLY,
   raw_request: RAW,
 };
 
-test("registers all eleven tools with annotations", () => {
+test("registers all twelve tools with annotations", () => {
   assert.deepEqual(Object.keys(ANN).sort(), Object.keys(EXPECTED).sort());
   for (const [name, a] of Object.entries(ANN)) {
     assert.ok(a, `${name} is missing annotations`);
@@ -66,7 +67,15 @@ test("every tool carries exactly its pinned hints (all four set)", () => {
 });
 
 test("analytics and inspection stay read-only — they never mutate the property", () => {
-  for (const name of ["search_analytics", "inspect_url", "list_sites", "get_site", "list_sitemaps", "get_sitemap"]) {
+  for (const name of [
+    "search_analytics",
+    "get_top_queries",
+    "inspect_url",
+    "list_sites",
+    "get_site",
+    "list_sitemaps",
+    "get_sitemap",
+  ]) {
     assert.equal(ANN[name]?.readOnlyHint, true, `${name} must be read-only`);
   }
 });
