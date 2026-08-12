@@ -114,6 +114,12 @@ test("dist binary completes a real MCP handshake over stdio and lists every tool
     assert.equal(server?.name, "mcp-google-search-console");
     assert.match(String(server?.version), /^\d+\.\d+\.\d+$/);
 
+    // The initialize result must carry the instructions block — the only prose
+    // the calling model reads before it picks a tool.
+    const instructions = client.getInstructions() ?? "";
+    assert.ok(instructions.length > 200, `initialize must carry instructions (got ${instructions.length} chars)`);
+    assert.match(instructions, /list_sites/);
+
     const { tools } = await client.listTools();
     assert.deepEqual(tools.map((t) => t.name).sort(), ALL_TOOLS);
 

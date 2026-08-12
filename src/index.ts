@@ -12,6 +12,26 @@ import { registerAnalyticsTools } from "./tools/analytics.js";
 import { registerInspectionTools } from "./tools/inspection.js";
 import { registerRawTool } from "./tools/raw.js";
 
+/**
+ * Prepended to every session as the `instructions` of the MCP initialize result
+ * — the only prose the calling model sees before it picks a tool. It carries
+ * what the tool list cannot: which product this is, what the API refuses to do,
+ * what a call costs, and how its errors decode.
+ */
+const INSTRUCTIONS =
+  "Google Search Console reports how a property performs in organic Google Search and how its URLs " +
+  "stand in the index — not Google Analytics (on-site traffic), not Google Ads. Nothing here can " +
+  "request (re)indexing; a sitemap submission is the only nudge, and writes are limited to " +
+  "linking/unlinking a property and submitting/removing sitemaps. Batch work is where it bites: " +
+  "2,000 URL inspections per property a day and 200 sites/sitemaps calls a minute — never sweep a " +
+  "whole site; 429s and read-side 5xx are already retried inside the server, so a returned error is " +
+  "final. Take property ids verbatim from list_sites: a 403/404 is usually a near-miss id (scheme, " +
+  "www, trailing slash, sc-domain:), not a permissions problem; a 403 on a write points at a " +
+  "readonly token; auth failing on every call means a dead refresh token (they expire after 7 days " +
+  "while the OAuth consent screen is in Testing). Empty rows[] on the first page usually means the " +
+  "dates fall in the 2-3 day finalization lag or you queried a sibling property, not zero traffic. " +
+  "Confirm with the user before delete_site or delete_sitemap.";
+
 /** Reads the package version so the server reports its real version to MCP clients. */
 function readVersion(): string {
   try {
@@ -47,10 +67,15 @@ async function main(): Promise<void> {
   const config = await loadConfigOrExit(telemetry);
   const client = new GoogleSearchConsoleClient(config);
 
-  const server = new McpServer({
-    name: "mcp-google-search-console",
-    version: readVersion(),
-  });
+  // `instructions` rides in the options argument (not serverInfo) — that is what
+  // the SDK copies into the initialize result.
+  const server = new McpServer(
+    {
+      name: "mcp-google-search-console",
+      version: readVersion(),
+    },
+    { instructions: INSTRUCTIONS },
+  );
 
   instrumentToolCalls(server, telemetry);
   server.server.oninitialized = () => {
