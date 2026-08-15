@@ -1,246 +1,221 @@
-# Google Search Console MCP
+# <img src="./assets/a1-logo.svg" alt="A1" width="40"> Google Search Console MCP
+
+**English** | [Русский](./README.ru.md)
 
 [![npm](https://img.shields.io/npm/v/mcp-google-search-console)](https://www.npmjs.com/package/mcp-google-search-console)
 [![CI](https://github.com/A1-x-Tech/mcp-google-search-console/actions/workflows/ci.yml/badge.svg)](https://github.com/A1-x-Tech/mcp-google-search-console/actions/workflows/ci.yml)
 [![Glama](https://glama.ai/mcp/servers/A1-x-Tech/mcp-google-search-console/badges/score.svg)](https://glama.ai/mcp/servers/A1-x-Tech/mcp-google-search-console)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 
-MCP server for the **Google Search Console API**: search performance analytics
-(clicks, impressions, CTR, position), sitemap management, URL index inspection
-and property management — from Claude, Cursor, Codex and other AI clients, in
-natural language.
+**A1 Google Search Console MCP** connects an AI app to Google Search Console. Investigate search performance, check whether a URL is indexed, inspect sitemaps and deliberately submit or remove a sitemap when needed.
 
-Ask your assistant "which queries brought the most clicks last month?", "is this
-page indexed?", or "resubmit the sitemap" — it drives the Search Console API for
-you, from a quick indexing check to a full performance analysis.
+It works with the properties your Google account can access. The important detail is that it uses the exact Search Console property value — a domain property and a URL-prefix property are different objects.
+
+- **12 tools.** Seven tools read properties, search data, sitemaps and index status; two add a property or submit a sitemap; three can remove data or call an arbitrary API method.
+- **Exact property IDs.** `https://example.com/`, `https://www.example.com/` and `sc-domain:example.com` are distinct. `list_sites` shows the value to use.
+- **Search data with context.** Query clicks, impressions, CTR and position by date, page, query, country, device or search appearance.
+- **Indexing, not publishing.** URL inspection explains Google’s current status; it does not force a page into the index.
+
+Start with a read-only question:
+
+> Show the top 20 search queries for my property over the last 28 days, with clicks and CTR.
+
+[Connect the server](#quick-start) · [Explore use cases](#what-you-can-ask-it-to-do) · [Open technical documentation](#technical-documentation)
+
+---
+
+## See it work in a minute
+
+> **You:** Is `https://example.com/pricing` indexed? If not, why?
+>
+> **Assistant:** Inspects the URL and shows the index verdict, coverage, crawl information and canonical URLs. Nothing changes.
+>
+> **You:** Check my submitted sitemaps and prepare a resubmission for the one with errors.
+>
+> **Assistant:** Shows the sitemap, its warnings and errors, then asks for confirmation before submitting it again.
+>
+> **You:** Confirm.
+>
+> **Assistant:** Resubmits the selected sitemap. It does not change page content or guarantee indexing.
+
+## Contents
+
+- [Quick start](#quick-start)
+- [What you can ask it to do](#what-you-can-ask-it-to-do)
+- [How Search Console properties work](#how-search-console-properties-work)
+- [What can change](#what-can-change)
+- [Getting access](#getting-access)
+- [Configuration](#configuration)
+- [Data, limits and background work](#data-limits-and-background-work)
+- [Technical documentation](#technical-documentation)
+- [Support](#support)
 
 ## Quick start
 
-1. [Get OAuth credentials](#getting-credentials) for the Search Console API.
-2. Add the server — for example, in Claude Code ([other clients](#installation)):
+You need Node.js 20+, a Google account with access to a Search Console property and OAuth credentials from Google Cloud.
 
-   ```bash
-   claude mcp add google-search-console \
-     -e GOOGLE_SEARCH_CONSOLE_CLIENT_ID=your_client_id \
-     -e GOOGLE_SEARCH_CONSOLE_CLIENT_SECRET=your_client_secret \
-     -e GOOGLE_SEARCH_CONSOLE_REFRESH_TOKEN=your_refresh_token \
-     -- npx -y mcp-google-search-console@latest
-   ```
+1. [Prepare OAuth access](#getting-access).
+2. Add the server to your AI app.
+3. Start with the read-only question above.
 
-3. Ask the assistant: *"Show me the top 20 search queries for example.com over
-   the last 28 days, with clicks and CTR."*
+<details open><summary><strong>Codex</strong></summary>
 
-## Tools
+<br>
 
-| Tool | Description |
-|---|---|
-| `list_sites` | All Search Console properties the account can access, with permission levels. |
-| `get_site` | One property's entry (siteUrl + permissionLevel). |
-| `add_site` | Add a property (stays unverified until verified in Search Console). |
-| `delete_site` | Unlink a property from the account (no data is deleted). |
-| `search_analytics` | Performance query: clicks/impressions/CTR/position by date, query, page, country, device, search appearance or hour; filters, search type, pagination, fresh-data mode. |
-| `get_top_queries` | Shortcut for the most common ask: top queries by clicks, optionally filtered by page substring, country or device. |
-| `list_sitemaps` | Submitted sitemaps (or children of a sitemap index), with errors/warnings. |
-| `get_sitemap` | One sitemap's status and per-content-type counts. |
-| `submit_sitemap` | Submit or resubmit a sitemap. |
-| `delete_sitemap` | Remove a sitemap from Search Console. |
-| `inspect_url` | Google-index status of a URL: verdict, coverage, crawl info, canonicals, rich results. |
-| `raw_request` | Escape hatch: any Search Console API path (webmasters/v3 or v1). |
-
-Plus resilience built in: automatic OAuth token refresh (including on 401),
-retries with backoff on 429 (and on 5xx/network errors for reads only —
-mutations are never replayed), a request timeout, and an SSRF guard so the
-token can't leak to a foreign host.
-
-## Example prompts
-
-- "Which pages lost the most clicks this month compared to the previous one?"
-- "Is https://example.com/pricing indexed? If not, why?"
-- "List queries containing 'mcp' where we rank below position 10."
-- "Do any of our sitemaps have errors? Resubmit the ones that do."
-
-## Two property formats (the #1 pitfall)
-
-The `site_url` must match the property **exactly** as registered in Search Console:
-
-- **URL-prefix property** — full URL with scheme and trailing slash:
-  `https://example.com/`. Note `http://example.com/`, `https://example.com/`
-  and `https://www.example.com/` are three **different** properties.
-- **Domain property** — `sc-domain:example.com` (no scheme, no slash).
-
-A near-match returns 403/404. `list_sites` shows the exact registered values —
-the assistant will usually call it first.
-
-## Limitations (the API's, not the server's)
-
-- **Dates are in Pacific Time** and `end_date` is inclusive; final analytics
-  data lags ~2–3 days (pass `data_state: "all"` for fresh, still-changing rows).
-- **Filters are AND-only** — no OR across filters; regex operators use RE2 syntax.
-- **URL inspection quota is small**: 2,000 inspections per property per day
-  (600/minute) — don't batch-inspect entire sites.
-- **Search analytics**: max 25,000 rows per request (paginate with `start_row`);
-  anonymized long-tail queries are never returned.
-- **Verification is out of scope**: `add_site` registers a property, but
-  verification happens in the Search Console UI or the Site Verification API.
-
-## Installation
-
-Requires Node.js 20+ (runs via `npx`, no separate install).
-
-<details open>
-<summary><b>Claude Code</b></summary>
+**In the app:** open **Settings → Plugins → MCP servers**, choose **Add server**, then add `npx -y mcp-google-search-console@latest` with `GOOGLE_SEARCH_CONSOLE_CLIENT_ID`, `GOOGLE_SEARCH_CONSOLE_CLIENT_SECRET` and `GOOGLE_SEARCH_CONSOLE_REFRESH_TOKEN`.
 
 ```bash
-claude mcp add google-search-console \
-  -e GOOGLE_SEARCH_CONSOLE_CLIENT_ID=your_client_id \
-  -e GOOGLE_SEARCH_CONSOLE_CLIENT_SECRET=your_client_secret \
-  -e GOOGLE_SEARCH_CONSOLE_REFRESH_TOKEN=your_refresh_token \
+codex mcp add google-search-console \
+  --env GOOGLE_SEARCH_CONSOLE_CLIENT_ID=your_client_id \
+  --env GOOGLE_SEARCH_CONSOLE_CLIENT_SECRET=your_client_secret \
+  --env GOOGLE_SEARCH_CONSOLE_REFRESH_TOKEN=your_refresh_token \
   -- npx -y mcp-google-search-console@latest
+codex mcp list
 ```
+
+[Codex MCP documentation](https://learn.chatgpt.com/docs/extend/mcp?surface=cli)
 
 </details>
 
-<details>
-<summary><b>Claude Desktop</b></summary>
+<details><summary><strong>Claude Code</strong></summary>
 
-`claude_desktop_config.json` — macOS `~/Library/Application Support/Claude/`, Windows `%APPDATA%\Claude\`
+<br>
+
+```bash
+claude mcp add \
+  --env GOOGLE_SEARCH_CONSOLE_CLIENT_ID=your_client_id \
+  --env GOOGLE_SEARCH_CONSOLE_CLIENT_SECRET=your_client_secret \
+  --env GOOGLE_SEARCH_CONSOLE_REFRESH_TOKEN=your_refresh_token \
+  --transport stdio --scope user google-search-console \
+  -- npx -y mcp-google-search-console@latest
+claude mcp list
+```
+
+[Claude Code MCP documentation](https://code.claude.com/docs/en/mcp)
+
+</details>
+
+<details><summary><strong>Claude Desktop</strong></summary>
+
+<br>
+
+Open **Settings → Developer → Edit Config** and add:
 
 ```json
-{
-  "mcpServers": {
-    "google-search-console": {
-      "command": "npx",
-      "args": ["-y", "mcp-google-search-console@latest"],
-      "env": {
-        "GOOGLE_SEARCH_CONSOLE_CLIENT_ID": "your_client_id",
-        "GOOGLE_SEARCH_CONSOLE_CLIENT_SECRET": "your_client_secret",
-        "GOOGLE_SEARCH_CONSOLE_REFRESH_TOKEN": "your_refresh_token"
-      }
-    }
-  }
-}
+{"mcpServers":{"google-search-console":{"command":"npx","args":["-y","mcp-google-search-console@latest"],"env":{"GOOGLE_SEARCH_CONSOLE_CLIENT_ID":"your_client_id","GOOGLE_SEARCH_CONSOLE_CLIENT_SECRET":"your_client_secret","GOOGLE_SEARCH_CONSOLE_REFRESH_TOKEN":"your_refresh_token"}}}}
 ```
+
+If **Edit Config** is unavailable, edit `~/Library/Application Support/Claude/claude_desktop_config.json` on macOS or `%APPDATA%\Claude\claude_desktop_config.json` on Windows.
+
+[Claude Desktop MCP documentation](https://support.claude.com/en/articles/10949351-getting-started-with-local-mcp-servers-on-claude-desktop)
 
 </details>
 
-<details>
-<summary><b>Cursor</b></summary>
+<details><summary><strong>Cursor</strong></summary>
 
-`~/.cursor/mcp.json` (or `.cursor/mcp.json` in the project)
+<br>
+
+Add to `~/.cursor/mcp.json` on macOS/Linux or `%USERPROFILE%\.cursor\mcp.json` on Windows:
 
 ```json
-{
-  "mcpServers": {
-    "google-search-console": {
-      "command": "npx",
-      "args": ["-y", "mcp-google-search-console@latest"],
-      "env": {
-        "GOOGLE_SEARCH_CONSOLE_CLIENT_ID": "your_client_id",
-        "GOOGLE_SEARCH_CONSOLE_CLIENT_SECRET": "your_client_secret",
-        "GOOGLE_SEARCH_CONSOLE_REFRESH_TOKEN": "your_refresh_token"
-      }
-    }
-  }
-}
+{"mcpServers":{"google-search-console":{"type":"stdio","command":"npx","args":["-y","mcp-google-search-console@latest"],"env":{"GOOGLE_SEARCH_CONSOLE_CLIENT_ID":"your_client_id","GOOGLE_SEARCH_CONSOLE_CLIENT_SECRET":"your_client_secret","GOOGLE_SEARCH_CONSOLE_REFRESH_TOKEN":"your_refresh_token"}}}}
 ```
+
+[Cursor MCP documentation](https://cursor.com/docs/mcp)
 
 </details>
 
-<details>
-<summary><b>VS Code</b></summary>
+<details><summary><strong>VS Code</strong></summary>
 
-`.vscode/mcp.json` — note the `servers` key (not `mcpServers`)
+<br>
+
+Run **MCP: Open User Configuration** and add:
 
 ```json
-{
-  "servers": {
-    "google-search-console": {
-      "type": "stdio",
-      "command": "npx",
-      "args": ["-y", "mcp-google-search-console@latest"],
-      "env": {
-        "GOOGLE_SEARCH_CONSOLE_CLIENT_ID": "your_client_id",
-        "GOOGLE_SEARCH_CONSOLE_CLIENT_SECRET": "your_client_secret",
-        "GOOGLE_SEARCH_CONSOLE_REFRESH_TOKEN": "your_refresh_token"
-      }
-    }
-  }
-}
+{"servers":{"google-search-console":{"type":"stdio","command":"npx","args":["-y","mcp-google-search-console@latest"],"env":{"GOOGLE_SEARCH_CONSOLE_CLIENT_ID":"${input:gsc_client_id}","GOOGLE_SEARCH_CONSOLE_CLIENT_SECRET":"${input:gsc_client_secret}","GOOGLE_SEARCH_CONSOLE_REFRESH_TOKEN":"${input:gsc_refresh_token}"}}},"inputs":[{"type":"promptString","id":"gsc_client_id","description":"Google OAuth client ID"},{"type":"promptString","id":"gsc_client_secret","description":"Google OAuth client secret","password":true},{"type":"promptString","id":"gsc_refresh_token","description":"Google OAuth refresh token","password":true}]}
 ```
+
+Check it with **MCP: List Servers**. [VS Code MCP documentation](https://code.visualstudio.com/docs/agent-customization/mcp-servers)
 
 </details>
 
-## Getting credentials
+## What you can ask it to do
 
-The Search Console API has no API-key access — every call needs OAuth 2.0 (the
-data belongs to your account). One-time setup, ~10 minutes:
+### Find search opportunities
 
-1. **Create a Google Cloud project** (or reuse one) at
-   [console.cloud.google.com](https://console.cloud.google.com/), then enable
-   the **Google Search Console API**: *APIs & Services → Library → Google
-   Search Console API → Enable*.
-2. **Configure the OAuth consent screen** (*APIs & Services → OAuth consent
-   screen*): choose *External*, fill in the app name and your email, and add
-   your Google account under **Test users** (in Testing mode only listed users
-   can authorize — no app verification needed).
-3. **Create an OAuth client** (*APIs & Services → Credentials → Create
-   credentials → OAuth client ID*), application type **Desktop app**. Save the
-   **client ID** and **client secret**.
-4. **Mint a refresh token.** The easiest way is the
-   [OAuth 2.0 Playground](https://developers.google.com/oauthplayground):
-   - Click the gear icon → check **Use your own OAuth credentials** → paste
-     your client ID and secret (add
-     `https://developers.google.com/oauthplayground` as an authorized redirect
-     URI to the OAuth client first).
-   - In *Step 1*, enter the scope `https://www.googleapis.com/auth/webmasters`
-     and click **Authorize APIs**, signing in with the test-user account that
-     owns your Search Console properties.
-   - In *Step 2*, click **Exchange authorization code for tokens** and copy the
-     **refresh token**.
-5. Put the three values into `GOOGLE_SEARCH_CONSOLE_CLIENT_ID`,
-   `GOOGLE_SEARCH_CONSOLE_CLIENT_SECRET` and
-   `GOOGLE_SEARCH_CONSOLE_REFRESH_TOKEN`. The server exchanges the refresh
-   token for short-lived access tokens automatically.
+- Which queries and pages brought the most clicks this month?
+- Which pages lost clicks compared with the previous period?
+- Show queries containing `mcp` where average position is below 10.
 
-Scope notes: `https://www.googleapis.com/auth/webmasters` covers everything
-including sitemap submission and property management. If you only need reads
-(analytics, inspection, listings), the narrower
-`https://www.googleapis.com/auth/webmasters.readonly` works — but `add_site`,
-`delete_site`, `submit_sitemap` and `delete_sitemap` will then return 403.
-While the consent screen stays in Testing mode, refresh tokens expire after
-7 days — publish the app (or keep it Internal in a Workspace domain) for
-long-lived tokens.
+### Check index status and sitemaps
 
-⚠️ The credentials are stored **in plain text** in your client's config — treat
-them like a password. The refresh token grants access to your Search Console
-data until revoked at
-[myaccount.google.com/permissions](https://myaccount.google.com/permissions).
+- Is this URL indexed? Show coverage, crawl and canonical information.
+- Which submitted sitemaps have errors or warnings?
+- Resubmit this sitemap after showing its current status.
+
+### Manage properties carefully
+
+- List the Search Console properties I can access.
+- Add this exact property value; I will verify ownership separately.
+- Remove this property from my account after confirmation.
+
+## How Search Console properties work
+
+A URL-prefix property must include its protocol and trailing slash, for example `https://example.com/`. A domain property is written as `sc-domain:example.com`. A near-match causes 403 or 404, so use the exact value returned by `list_sites`.
+
+`add_site` only registers a property. Verification remains in the Search Console UI or Site Verification API. Search data uses Pacific Time; `end_date` is inclusive and final analytics data typically lags by two to three days. `data_state: "all"` can include fresher, still-changing rows.
+
+## What can change
+
+| Operation | What happens | Confirmation boundary |
+|---|---|---|
+| List properties, analytics, sitemaps and URL status | Reads Search Console data | No change |
+| Add a property | Adds a property entry; does not verify it | Changes account access |
+| Submit or resubmit a sitemap | Requests processing of a sitemap | Changes Search Console state |
+| Delete a property | Unlinks the property from the account; Google data is not deleted | Destructive |
+| Delete a sitemap | Removes a submitted sitemap | Destructive |
+| Raw API request | May call a write or delete endpoint | Potentially destructive |
+
+The AI client controls confirmation prompts. The server marks reads, writes and destructive calls so the client can distinguish an inspection from a real change.
+
+## Getting access
+
+Search Console data requires Google OAuth 2.0; an API key is not enough.
+
+1. Create or select a Google Cloud project and enable **Google Search Console API**.
+2. Configure the OAuth consent screen and create a **Desktop app** OAuth client.
+3. Use the [OAuth 2.0 Playground](https://developers.google.com/oauthplayground) with **Use your own OAuth credentials** to authorize the Google account that can access the properties and obtain a refresh token.
+4. Use `https://www.googleapis.com/auth/webmasters` to include sitemaps and property changes. Use `https://www.googleapis.com/auth/webmasters.readonly` only if you intentionally need read-only access.
+
+Testing-mode refresh tokens can expire after seven days. Publish the OAuth app, or use an Internal Workspace app, for long-lived access. Treat the client secret and refresh token as passwords.
 
 ## Configuration
 
-| Variable | Required | Default | Description |
-|---|---|---|---|
-| `GOOGLE_SEARCH_CONSOLE_CLIENT_ID` | yes* | — | OAuth2 client id (refresh flow). |
-| `GOOGLE_SEARCH_CONSOLE_CLIENT_SECRET` | yes* | — | OAuth2 client secret (refresh flow). |
-| `GOOGLE_SEARCH_CONSOLE_REFRESH_TOKEN` | yes* | — | OAuth2 refresh token (refresh flow). |
-| `GOOGLE_SEARCH_CONSOLE_ACCESS_TOKEN` | yes* | — | Alternative: a static access token (~1 h lifetime), mostly for testing. |
-| `GOOGLE_SEARCH_CONSOLE_API_BASE` | no | `https://searchconsole.googleapis.com` | API root override. |
-| `GOOGLE_SEARCH_CONSOLE_TIMEOUT_MS` | no | `60000` | Per-request timeout, ms. |
-| `GOOGLE_SEARCH_CONSOLE_MAX_RETRIES` | no | `3` | Retries on transient errors. |
+| Variable | Required | Description |
+|---|---|---|
+| `GOOGLE_SEARCH_CONSOLE_CLIENT_ID` | Yes* | OAuth client ID. |
+| `GOOGLE_SEARCH_CONSOLE_CLIENT_SECRET` | Yes* | OAuth client secret. |
+| `GOOGLE_SEARCH_CONSOLE_REFRESH_TOKEN` | Yes* | OAuth refresh token. |
+| `GOOGLE_SEARCH_CONSOLE_ACCESS_TOKEN` | Yes* | Short-lived alternative to the OAuth trio. |
+| `GOOGLE_SEARCH_CONSOLE_API_BASE` | No | API base URL override. |
+| `GOOGLE_SEARCH_CONSOLE_TIMEOUT_MS` | No | Per-request timeout; default `60000` ms. |
+| `GOOGLE_SEARCH_CONSOLE_MAX_RETRIES` | No | Temporary-error retries; default `3`. |
 
-\* Either the three refresh-flow variables together, **or** `GOOGLE_SEARCH_CONSOLE_ACCESS_TOKEN`.
+\* Provide either the OAuth trio or an access token.
 
-## Documentation
+## Data, limits and background work
 
-- [All tools](https://github.com/A1-x-Tech/mcp-google-search-console/blob/main/docs/TOOLS.md) — full reference with parameters and notes.
-- [Development](https://github.com/A1-x-Tech/mcp-google-search-console/blob/main/docs/DEVELOPMENT.md) — build, tests, smoke check, telemetry.
-- [Publishing](https://github.com/A1-x-Tech/mcp-google-search-console/blob/main/docs/PUBLISHING.md) — releasing and MCP-catalog listing.
+- **Privacy.** The local server calls Google and sends anonymous telemetry with an installation ID, versions and tool names — never OAuth tokens, property data, tool arguments or prompts. Set `ASKADS_TELEMETRY=0` to opt out.
+- **API limits.** URL inspection allows 2,000 inspections per property per day and 600 per minute. Analytics returns at most 25,000 rows per request; long-tail anonymized queries are never returned. Use pagination and do not inspect whole sites URL by URL.
+- **No background monitoring.** The server works only while called. If your AI app supports scheduled tasks, it can periodically check a sitemap or an important URL.
+
+## Technical documentation
+
+- [All tools and inputs](./docs/TOOLS.md)
+- [Development documentation](./docs/DEVELOPMENT.md)
+- [Publishing documentation](./docs/PUBLISHING.md)
+- [Google Search Console API](https://developers.google.com/webmaster-tools)
 
 ## Support
 
-Questions, ideas, issues — Telegram [@gistrec](http://t.me/gistrec) or
-[GitHub issues](https://github.com/A1-x-Tech/mcp-google-search-console/issues).
-
-## License
-
-MIT — see [LICENSE](./LICENSE).
+Found a bug or need a scenario? [Create an issue](https://github.com/A1-x-Tech/mcp-google-search-console/issues) or write in [Telegram](https://t.me/a1_mcp).
