@@ -1,5 +1,7 @@
 # Tools
 
+For task-oriented guidance, open the [MCP capability catalog](./capabilities/index.md). This page remains the technical reference for schemas and API responses.
+
 The Google Search Console API is mostly reads plus a few idempotent mutations,
 so every tool carries explicit MCP annotations: reads are `readOnlyHint`,
 `add_site`/`submit_sitemap` are non-destructive idempotent writes,

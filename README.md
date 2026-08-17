@@ -211,6 +211,7 @@ Testing-mode refresh tokens can expire after seven days. Publish the OAuth app, 
 
 ## Technical documentation
 
+- [MCP capability catalog](./docs/capabilities/index.md) — task-oriented pages for every tool.
 - [All tools and inputs](./docs/TOOLS.md)
 - [Development documentation](./docs/DEVELOPMENT.md)
 - [Publishing documentation](./docs/PUBLISHING.md)
