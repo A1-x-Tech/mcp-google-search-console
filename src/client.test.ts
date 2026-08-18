@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { GoogleSearchConsoleClient } from "./client.js";
+import { CredentialsError, MISSING_CREDENTIALS_MESSAGE } from "./config.js";
 import type { GoogleSearchConsoleConfig } from "./types.js";
 
 const BASE = "https://searchconsole.googleapis.com";
@@ -57,6 +58,40 @@ function defaultHandler(url: string): Response {
 }
 
 // ---- Auth ----
+
+/**
+ * The degraded-start contract: a server without credentials still runs, so the
+ * client must fail the call itself — with the exact actionable message, before
+ * any fetch. Zero fetch calls proves the error skips the retry/backoff loop
+ * and the forced 401 re-mint alike (maxRetries is deliberately non-zero here).
+ */
+test("no credentials at all: CredentialsError with the exact text, fetch never called", async () => {
+  const mock = mockFetch(defaultHandler);
+  try {
+    const client = new GoogleSearchConsoleClient({ apiBase: BASE, maxRetries: 3, retryBaseMs: 0 });
+    await assert.rejects(
+      () => client.listSites(),
+      (err: unknown) => {
+        assert.ok(err instanceof CredentialsError, "must be a CredentialsError");
+        assert.equal(err.message, MISSING_CREDENTIALS_MESSAGE);
+        // The historical startup error, verbatim — the message is the product.
+        assert.ok(
+          err.message.startsWith(
+            "Google OAuth credentials are required: set GOOGLE_SEARCH_CONSOLE_CLIENT_ID + " +
+              "GOOGLE_SEARCH_CONSOLE_CLIENT_SECRET + GOOGLE_SEARCH_CONSOLE_REFRESH_TOKEN (recommended), " +
+              "or GOOGLE_SEARCH_CONSOLE_ACCESS_TOKEN with a short-lived access token.",
+          ),
+          "the message must open with the historical startup error, verbatim",
+        );
+        assert.match(err.message, /restart the server/, "the fix must mention the restart");
+        return true;
+      },
+    );
+    assert.equal(mock.calls.length, 0, "must not fetch at all — no retries, no token mint, no replay");
+  } finally {
+    mock.restore();
+  }
+});
 
 test("static access token: Bearer header, no token-endpoint traffic", async () => {
   const mock = mockFetch(defaultHandler);
