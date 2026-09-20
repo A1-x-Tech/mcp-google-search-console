@@ -11,7 +11,8 @@
 
 Сервер работает со свойствами, к которым есть доступ у вашего Google-аккаунта. Важная особенность: он использует точное значение свойства Search Console — domain property и URL-prefix property являются разными объектами.
 
-- **12 инструментов.** Семь инструментов читают свойства, поисковые данные, sitemap и статус индексации; два добавляют свойство или отправляют sitemap; три могут удалить данные или вызвать произвольный метод API.
+- **18 инструментов.** Семь инструментов читают свойства, поисковые данные, sitemap и статус индексации; два добавляют свойство или отправляют sitemap; три могут удалить данные или вызвать произвольный метод API.
+- **Подключение из диалога.** Скажите «подключи Google Search Console»: сервер проведёт через создание OAuth-клиента, поймает редирект Google на `127.0.0.1` с PKCE и сам сохранит токены — без конфигов и перезапуска.
 - **Точные ID свойств.** `https://example.com/`, `https://www.example.com/` и `sc-domain:example.com` различаются. `list_sites` показывает значение, которое нужно использовать.
 - **Поисковые данные с контекстом.** Можно получить клики, показы, CTR и позицию по дате, странице, запросу, стране, устройству или search appearance.
 - **Индексация, а не публикация.** Проверка URL показывает текущий статус Google, но не заставляет страницу попасть в индекс.
@@ -52,23 +53,26 @@
 
 ## Быстрый старт
 
-Нужны Node.js 20+, Google-аккаунт с доступом к свойству Search Console и OAuth-данные Google Cloud.
+Нужны Node.js 20+ и Google-аккаунт. Учётные данные при установке не нужны: сервер подключается прямо в диалоге.
 
-1. [Подготовьте OAuth-доступ](#как-получить-доступ).
-2. Добавьте сервер в AI-приложение.
+1. Добавьте сервер в AI-приложение.
+2. Скажите «подключи Google Search Console» — ассистент проведёт [создание OAuth-клиента и выдачу доступа](#как-получить-доступ), не трогая конфиги.
 3. Начните с запроса, который только читает данные.
 
 <details open><summary><strong>Codex</strong></summary>
 
 <br>
 
+<<<<<<< Updated upstream
 **В приложении:** откройте **Settings → MCP servers**, нажмите **Add server**, выберите **STDIO**, укажите команду `npx -y mcp-google-search-console@latest` и переменные окружения `GOOGLE_SEARCH_CONSOLE_CLIENT_ID`, `GOOGLE_SEARCH_CONSOLE_CLIENT_SECRET`, `GOOGLE_SEARCH_CONSOLE_REFRESH_TOKEN`, затем нажмите **Save**, потом **Restart**.
+||||||| Stash base
+**В приложении:** откройте **Settings → Plugins → MCP servers**, выберите **Add server**, затем добавьте `npx -y mcp-google-search-console@latest` с `GOOGLE_SEARCH_CONSOLE_CLIENT_ID`, `GOOGLE_SEARCH_CONSOLE_CLIENT_SECRET` и `GOOGLE_SEARCH_CONSOLE_REFRESH_TOKEN`.
+=======
+**В приложении:** откройте **Settings → Plugins → MCP servers**, выберите **Add server**, затем добавьте `npx -y mcp-google-search-console@latest`.
+>>>>>>> Stashed changes
 
 ```bash
 codex mcp add google-search-console \
-  --env GOOGLE_SEARCH_CONSOLE_CLIENT_ID=your_client_id \
-  --env GOOGLE_SEARCH_CONSOLE_CLIENT_SECRET=your_client_secret \
-  --env GOOGLE_SEARCH_CONSOLE_REFRESH_TOKEN=your_refresh_token \
   -- npx -y mcp-google-search-console@latest
 codex mcp list
 ```
@@ -83,9 +87,6 @@ codex mcp list
 
 ```bash
 claude mcp add \
-  --env GOOGLE_SEARCH_CONSOLE_CLIENT_ID=your_client_id \
-  --env GOOGLE_SEARCH_CONSOLE_CLIENT_SECRET=your_client_secret \
-  --env GOOGLE_SEARCH_CONSOLE_REFRESH_TOKEN=your_refresh_token \
   --transport stdio --scope user google-search-console \
   -- npx -y mcp-google-search-console@latest
 claude mcp list
@@ -104,7 +105,7 @@ claude mcp list
 Этот репозиторий сейчас публикует npm-пакет со stdio и пока не содержит `.mcpb`. Поэтому используйте приведённый ниже JSON stdio-конфиг как fallback только в сборках Claude Desktop, где ещё поддерживается локальная конфигурация:
 
 ```json
-{"mcpServers":{"google-search-console":{"command":"npx","args":["-y","mcp-google-search-console@latest"],"env":{"GOOGLE_SEARCH_CONSOLE_CLIENT_ID":"your_client_id","GOOGLE_SEARCH_CONSOLE_CLIENT_SECRET":"your_client_secret","GOOGLE_SEARCH_CONSOLE_REFRESH_TOKEN":"your_refresh_token"}}}}
+{"mcpServers":{"google-search-console":{"command":"npx","args":["-y","mcp-google-search-console@latest"]}}}
 ```
 
 В таких сборках сохраните его в `~/Library/Application Support/Claude/claude_desktop_config.json` на macOS или `%APPDATA%\Claude\claude_desktop_config.json` на Windows.
@@ -120,7 +121,7 @@ claude mcp list
 Добавьте в `~/.cursor/mcp.json` на macOS/Linux или `%USERPROFILE%\.cursor\mcp.json` на Windows:
 
 ```json
-{"mcpServers":{"google-search-console":{"type":"stdio","command":"npx","args":["-y","mcp-google-search-console@latest"],"env":{"GOOGLE_SEARCH_CONSOLE_CLIENT_ID":"your_client_id","GOOGLE_SEARCH_CONSOLE_CLIENT_SECRET":"your_client_secret","GOOGLE_SEARCH_CONSOLE_REFRESH_TOKEN":"your_refresh_token"}}}}
+{"mcpServers":{"google-search-console":{"type":"stdio","command":"npx","args":["-y","mcp-google-search-console@latest"]}}}
 ```
 
 [Документация Cursor MCP](https://cursor.com/docs/mcp)
@@ -134,7 +135,7 @@ claude mcp list
 Запустите **MCP: Open User Configuration** и добавьте:
 
 ```json
-{"servers":{"google-search-console":{"type":"stdio","command":"npx","args":["-y","mcp-google-search-console@latest"],"env":{"GOOGLE_SEARCH_CONSOLE_CLIENT_ID":"${input:gsc_client_id}","GOOGLE_SEARCH_CONSOLE_CLIENT_SECRET":"${input:gsc_client_secret}","GOOGLE_SEARCH_CONSOLE_REFRESH_TOKEN":"${input:gsc_refresh_token}"}}},"inputs":[{"type":"promptString","id":"gsc_client_id","description":"Google OAuth client ID"},{"type":"promptString","id":"gsc_client_secret","description":"Google OAuth client secret","password":true},{"type":"promptString","id":"gsc_refresh_token","description":"Google OAuth refresh token","password":true}]}
+{"servers":{"google-search-console":{"type":"stdio","command":"npx","args":["-y","mcp-google-search-console@latest"]}}}
 ```
 
 Проверьте сервер командой **MCP: List Servers**. [Документация VS Code MCP](https://code.visualstudio.com/docs/agent-customization/mcp-servers)
@@ -182,7 +183,20 @@ URL-prefix property должен содержать протокол и заве
 
 ## Как получить доступ
 
-Для данных Search Console нужен Google OAuth 2.0: API-ключа недостаточно.
+Google Search Console требует OAuth 2.0: одного API-ключа недостаточно. Путей два, и первый не требует править конфигурационные файлы.
+
+### Подключение из диалога (рекомендуемый путь)
+
+Скажите «подключи Google Search Console», и ассистент пройдёт флоу вместе с вами:
+
+1. `setup_instructions` выдаёт чек-лист: создать или выбрать проект Google Cloud, включить **Google Search Console API**, настроить consent screen и создать OAuth-клиент типа **Desktop app**.
+2. Скачайте JSON этого клиента («Download JSON») и передайте ассистенту **путь** к файлу — `set_client` сохранит его с правами только для владельца. Секрет через переписку не проходит.
+3. `start_login` возвращает ссылку на согласие Google. Откройте её **на этой же машине** и подтвердите доступ: код возвращается на одноразовый слушатель `127.0.0.1` (PKCE), а не в чат.
+4. `finish_login` меняет код на токены и кладёт их в `~/.config/mcp-google-search-console/credentials.json` (права 0600) и проверяет их реальным вызовом Google Search Console API — так невключённый API ловится сразу.
+
+Токены перечитываются на каждый вызов, поэтому подключение действует немедленно — перезапускать AI-приложение не нужно. `auth_status` показывает состояние, `logout` отзывает токен и удаляет его.
+
+### Переменные окружения (CI и автоматические установки)
 
 1. Создайте или выберите проект Google Cloud и включите **Google Search Console API**.
 2. Настройте OAuth consent screen и создайте OAuth-клиент типа **Desktop app**.
@@ -193,12 +207,15 @@ Refresh token OAuth-приложения в режиме Testing может ис
 
 ## Конфигурация
 
+Все переменные необязательные — без единой из них сервер подключается [из диалога](#подключение-из-диалога-рекомендуемый-путь).
+
 | Переменная | Обязательна | Описание |
 |---|---|---|
-| `GOOGLE_SEARCH_CONSOLE_CLIENT_ID` | Да* | OAuth client ID. |
-| `GOOGLE_SEARCH_CONSOLE_CLIENT_SECRET` | Да* | OAuth client secret. |
-| `GOOGLE_SEARCH_CONSOLE_REFRESH_TOKEN` | Да* | OAuth refresh token. |
-| `GOOGLE_SEARCH_CONSOLE_ACCESS_TOKEN` | Да* | Короткоживущая альтернатива OAuth-тройке. |
+| `GOOGLE_SEARCH_CONSOLE_CLIENT_ID` | Нет* | OAuth client ID. |
+| `GOOGLE_SEARCH_CONSOLE_CLIENT_SECRET` | Нет* | OAuth client secret. |
+| `GOOGLE_SEARCH_CONSOLE_REFRESH_TOKEN` | Нет* | OAuth refresh token. |
+| `GOOGLE_SEARCH_CONSOLE_ACCESS_TOKEN` | Нет* | Короткоживущая альтернатива OAuth-тройке. |
+| `GOOGLE_SEARCH_CONSOLE_OAUTH_PORT` | Нет | Фиксированный порт loopback-слушателя для входа из диалога; нужен при пробросе портов по SSH. |
 | `GOOGLE_SEARCH_CONSOLE_API_BASE` | Нет | Переопределяет базовый URL API. |
 | `GOOGLE_SEARCH_CONSOLE_TIMEOUT_MS` | Нет | Тайм-аут запроса; по умолчанию `60000` мс. |
 | `GOOGLE_SEARCH_CONSOLE_MAX_RETRIES` | Нет | Повторы временных ошибок; по умолчанию `3`. |
