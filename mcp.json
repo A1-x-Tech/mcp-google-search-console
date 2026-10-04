@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "google-search-console": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-google-search-console@latest"
+      ]
+    }
+  }
+}
