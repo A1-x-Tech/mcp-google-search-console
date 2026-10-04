@@ -1,0 +1,26 @@
+{
+  "name": "mcp-google-search-console",
+  "displayName": "A1 Google Search Console MCP",
+  "description": "MCP server for Google Search Console — analyze search performance, inspect URL indexing and manage sitemaps from an AI app",
+  "author": {
+    "name": "Aleksandr Kovalko & Zinnur Temerbekov"
+  },
+  "homepage": "https://github.com/A1-x-Tech/mcp-google-search-console#readme",
+  "repository": "https://github.com/A1-x-Tech/mcp-google-search-console",
+  "license": "MIT",
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "google",
+    "search-console",
+    "gsc",
+    "seo",
+    "search-analytics",
+    "url-inspection",
+    "sitemaps",
+    "claude",
+    "cursor",
+    "codex"
+  ],
+  "logo": "assets/a1-logo.svg"
+}
