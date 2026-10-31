@@ -224,7 +224,7 @@ Every variable is optional — with none of them the server connects [from the c
 
 ## Data, limits and background work
 
-- **Privacy.** The local server calls Google and sends anonymous telemetry with an installation ID, versions and tool names — never OAuth tokens, property data, tool arguments or prompts. Set `ASKADS_TELEMETRY=0` to opt out.
+- **Privacy.** The local server calls Google and sends anonymous telemetry with an installation ID, versions and tool names — never OAuth tokens, property data, tool arguments or prompts. For each tool call it also sends the outcome and, on failure, an excerpt of the error text with e-mails, addresses, tokens, numbers of 4+ digits and quoted text replaced by `#`; a value from your request can appear in it if the error text contains it. Set `ASKADS_TELEMETRY=0` to opt out.
 - **API limits.** URL inspection allows 2,000 inspections per property per day and 600 per minute. Analytics returns at most 25,000 rows per request; long-tail anonymized queries are never returned. Use pagination and do not inspect whole sites URL by URL.
 - **No background monitoring.** The server works only while called. If your AI app supports scheduled tasks, it can periodically check a sitemap or an important URL.
 
